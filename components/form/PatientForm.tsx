@@ -4,22 +4,35 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
-import {CustomForm} from "@/components/form/CustomForm"
+import {CustomForm} from "@/components/form/CustomFormField"
 import {
   Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-const formSchema = z.object({
-  fullName: z.string().min(2).max(50),
 
+import { useState } from "react"
+import { createUser } from "@/lib/action/patient.action"
+import { useRouter } from "next/navigation"
+import { ID } from "node-appwrite"
+
+
+const formSchema = z.object({
+  name: z.string()
+ .min(2,"name contain at least two character")
+  .max(50,"name contain at most 50 character"),
+  email:z.string().email("Invalid email address"),
+  phone:z.string().refine((phone)=>/^\+?[1-9]\d{1,14}$/.test(phone),"Invalid phone number")
 })
 
+export enum formFieldType
+{
+    INPUT='input',
+    CHEKBOX='chekbox',
+    PHONE_INPUT='phoneInput',
+    TEXTAREA='textarea',
+    DATE_PICKER='datePicker',
+    SELECT='select',
+    SKELETON='skeleton'
+}
 
 
 
@@ -27,15 +40,28 @@ export const PatientForm = () => {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-          fullName: "",
+          name: "",
+          email:"",
+          phone:""
         },
       })
-     
-      // 2. Define a submit handler.
-      function onSubmit(values: z.infer<typeof formSchema>) {
-        // Do something with the form values.
-        // ✅ This will be type-safe and validated.
-        console.log(values)
+     const router=useRouter();
+     const [loader,setLoader]=useState(false);
+     async function onSubmit({name,email,phone}: z.infer<typeof formSchema>) {
+      setLoader(true);
+      
+      
+       try {
+        const userData={name,email,phone};
+
+        const user=await createUser(userData);
+       
+        console.log(user);
+        
+       } catch (error) {
+        console.log(error);
+        
+       }
       }
   return (
     <Form {...form} >
@@ -44,8 +70,33 @@ export const PatientForm = () => {
                <h1 className='text-2xl'>Hi there 👋</h1>
                  <p>Get Started with Appointment.</p>
         </section>
-     
-      <Button type="submit" className="bg-green-400 w-full">Submit</Button>
+     <CustomForm 
+     fieldType={formFieldType.INPUT}
+     control={form.control}
+     name="name"
+     label="Name"
+     placeholder="John Doe"
+     iconSrc="/assets/icons/user.svg"
+     iconAlt="user"
+     />
+
+<CustomForm 
+     fieldType={formFieldType.INPUT}
+     control={form.control}
+     name="email"
+     label="Email"
+     placeholder="John@gmail.com"
+     iconSrc="/assets/icons/email.svg"
+     iconAlt="email"
+     />
+
+<CustomForm 
+     fieldType={formFieldType.PHONE_INPUT}
+     control={form.control}
+     name="phone"
+     label="Phone number"
+     />
+      <Button type="submit" className="bg-green-400 w-full text-lg">Submit</Button>
     </form>
   </Form>
   )
@@ -68,6 +119,7 @@ export const PatientForm = () => {
 // import { Input } from '../ui/input'
 // import { Label } from "@/components/ui/label"
 // import { Button } from '../ui/button'
+// import Image from 'next/image'
 
 // export const PatientForm = () => {
 //   return (
@@ -80,15 +132,21 @@ export const PatientForm = () => {
 //         <div className='flex-col w-10/12 mt-10 '>
 //             <div>
 //             <Label htmlFor="fullname">Full name</Label>
-//             <Input placeholder='kalyani patil' className='bg-slate-200 text-b'/>
+//             <Image
+//             src={"/assets/icons/user.svg"}
+//             height={20}
+//             width={20}
+//             alt='user'
+//             />
+//             <Input placeholder='kalyani patil' className='bg-slate-200 text-black text-lg'/>
 //             </div>
 //             <div className='mt-5'>
 //             <Label htmlFor="email">Email Address</Label>
-//             <Input placeholder='xyz@gmail.com' className='bg-slate-200'/>
+//             <Input placeholder='xyz@gmail.com' className='bg-slate-200 text-black text-lg'/>
 //             </div>
 //             <div className='mt-5'>
 //             <Label htmlFor="phone no">Phone number</Label>
-//             <Input placeholder='+91' className='bg-slate-200'/>
+//             <Input placeholder='+91' className='bg-slate-200 text-black text-lg'/>
 //             </div>
 //             <div className='mx-auto items-center mt-5'>
 //             <Button className='bg-green-400 w-full text-xl'>Get started</Button>
